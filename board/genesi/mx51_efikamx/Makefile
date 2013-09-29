@@ -14,7 +14,7 @@ include $(TOPDIR)/config.mk
 
 LIB	= $(obj)lib$(BOARD).o
 
-COBJS	:= efikamx.o efikamx-usb.o
+COBJS	:= efikamx.o efikamx-usb.o efikamx-lcd.o
 
 SRCS	:= $(COBJS:.o=.c)
 OBJS	:= $(addprefix $(obj),$(COBJS))
