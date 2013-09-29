@@ -403,6 +403,36 @@ extern void setup_iomux_usb(void);
 static inline void setup_iomux_usb(void) { }
 #endif
 
+
+/*
+ * I2C
+ */
+void setup_iomux_i2c(void)
+{
+       mxc_request_iomux(MX51_PIN_GPIO1_2, IOMUX_CONFIG_ALT0);
+       mxc_request_iomux(MX51_PIN_GPIO1_3, IOMUX_CONFIG_ALT0);
+
+       /* i2c2 SDA */
+       mxc_request_iomux(MX51_PIN_KEY_COL5,
+                       IOMUX_CONFIG_ALT3 | IOMUX_CONFIG_SION);
+       mxc_iomux_set_input(MX51_I2C2_IPP_SDA_IN_SELECT_INPUT,
+                       INPUT_CTL_PATH1);
+       mxc_iomux_set_pad(MX51_PIN_KEY_COL5,
+                       PAD_CTL_SRE_FAST | PAD_CTL_DRV_HIGH |
+                       PAD_CTL_100K_PU | PAD_CTL_HYS_ENABLE |
+                       PAD_CTL_ODE_OPENDRAIN_ENABLE);
+
+       /* i2c2 SCL */
+       mxc_request_iomux(MX51_PIN_KEY_COL4,
+                       IOMUX_CONFIG_ALT3 | IOMUX_CONFIG_SION);
+       mxc_iomux_set_input(MX51_I2C2_IPP_SCL_IN_SELECT_INPUT,
+                       INPUT_CTL_PATH1);
+       mxc_iomux_set_pad(MX51_PIN_KEY_COL4,
+                       PAD_CTL_SRE_FAST | PAD_CTL_DRV_HIGH |
+                       PAD_CTL_100K_PU | PAD_CTL_HYS_ENABLE |
+                       PAD_CTL_ODE_OPENDRAIN_ENABLE);
+}
+
 /*
  * LED configuration
  *
@@ -420,6 +450,19 @@ static iomux_v3_cfg_t const efikasb_led_pads[] = {
 
 #define EFIKASB_CAPSLOCK_LED	IMX_GPIO_NR(2, 25)
 #define EFIKASB_MESSAGE_LED	IMX_GPIO_NR(1, 3) /* Note: active low */
+
+/*
+ * LCD
+ */
+#ifdef CONFIG_VIDEO
+extern void setup_iomux_lcd(void);
+extern void setup_efika_lcd(void);
+extern void setup_efika_lcd_early(void);
+#else
+static inline void setup_iomux_lcd(void) { }
+static inline void setup_efika_lcd(void) { }
+static inline void setup_efika_lcd_early(void) { }
+#endif
 
 /*
  * Board initialization
@@ -458,12 +501,16 @@ int board_early_init_f(void)
 	gpio_direction_output(EFIKAMX_SPI_SS0, 0);
 	gpio_direction_output(EFIKAMX_SPI_SS1, 1);
 
+	setup_iomux_lcd();
+
 	return 0;
 }
 
 int board_init(void)
 {
 	gd->bd->bi_boot_params = PHYS_SDRAM_1 + 0x100;
+
+	setup_efika_lcd_early();
 
 	return 0;
 }
@@ -486,6 +533,15 @@ int board_late_init(void)
 					ARRAY_SIZE(efikamx_pata_pads));
 	setup_iomux_usb();
 
+	if (machine_is_efikasb())
+		setenv("preboot", "usb reset ; setenv stdin usbkbd\0");
+
+	efikamx_toggle_led(EFIKAMX_LED_BLUE);
+
+	setup_iomux_i2c();
+
+	setup_efika_lcd();
+
 	return 0;
 }
 
@@ -497,7 +553,7 @@ int checkboard(void)
 	if (machine_is_efikamx())
 		printf("Smarttop (1.%i)\n", rev & 0xf);
 	else if (machine_is_efikasb())
-		printf("Smartbook\n");
+		printf("Smartbook rev: %0x, (1.%i)\n", rev, rev & 0xf);
 
 	return 0;
 }
