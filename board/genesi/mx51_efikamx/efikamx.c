@@ -403,34 +403,21 @@ extern void setup_iomux_usb(void);
 static inline void setup_iomux_usb(void) { }
 #endif
 
-
 /*
  * I2C
  */
+
+static iomux_v3_cfg_t const efikamx_i2c_pads[] = {
+	MX51_PAD_GPIO1_2__GPIO1_2,
+	MX51_PAD_GPIO1_3__GPIO1_3,
+	MX51_PAD_KEY_COL5,
+	MX51_PAD_KEY_COL4,
+};
+
 void setup_iomux_i2c(void)
 {
-       mxc_request_iomux(MX51_PIN_GPIO1_2, IOMUX_CONFIG_ALT0);
-       mxc_request_iomux(MX51_PIN_GPIO1_3, IOMUX_CONFIG_ALT0);
-
-       /* i2c2 SDA */
-       mxc_request_iomux(MX51_PIN_KEY_COL5,
-                       IOMUX_CONFIG_ALT3 | IOMUX_CONFIG_SION);
-       mxc_iomux_set_input(MX51_I2C2_IPP_SDA_IN_SELECT_INPUT,
-                       INPUT_CTL_PATH1);
-       mxc_iomux_set_pad(MX51_PIN_KEY_COL5,
-                       PAD_CTL_SRE_FAST | PAD_CTL_DRV_HIGH |
-                       PAD_CTL_100K_PU | PAD_CTL_HYS_ENABLE |
-                       PAD_CTL_ODE_OPENDRAIN_ENABLE);
-
-       /* i2c2 SCL */
-       mxc_request_iomux(MX51_PIN_KEY_COL4,
-                       IOMUX_CONFIG_ALT3 | IOMUX_CONFIG_SION);
-       mxc_iomux_set_input(MX51_I2C2_IPP_SCL_IN_SELECT_INPUT,
-                       INPUT_CTL_PATH1);
-       mxc_iomux_set_pad(MX51_PIN_KEY_COL4,
-                       PAD_CTL_SRE_FAST | PAD_CTL_DRV_HIGH |
-                       PAD_CTL_100K_PU | PAD_CTL_HYS_ENABLE |
-                       PAD_CTL_ODE_OPENDRAIN_ENABLE);
+	imx_iomux_v3_setup_multiple_pads(efikamx_i2c_pads,
+					ARRAY_SIZE(efikamx_i2c_pads));
 }
 
 /*
@@ -450,6 +437,18 @@ static iomux_v3_cfg_t const efikasb_led_pads[] = {
 
 #define EFIKASB_CAPSLOCK_LED	IMX_GPIO_NR(2, 25)
 #define EFIKASB_MESSAGE_LED	IMX_GPIO_NR(1, 3) /* Note: active low */
+
+void efikamx_toggle_led(uint32_t mask)
+{
+	if (machine_is_efikamx()) {
+		gpio_set_value(EFIKAMX_LED_BLUE, mask & EFIKAMX_LED_BLUE);
+		gpio_set_value(EFIKAMX_LED_GREEN, mask & EFIKAMX_LED_GREEN);
+		gpio_set_value(EFIKAMX_LED_RED, mask & EFIKAMX_LED_RED);
+	} else {
+		gpio_set_value(EFIKASB_CAPSLOCK_LED, mask & EFIKAMX_LED_BLUE);
+		gpio_set_value(EFIKASB_MESSAGE_LED, !(mask & EFIKAMX_LED_GREEN));
+	}
+}
 
 /*
  * LCD
