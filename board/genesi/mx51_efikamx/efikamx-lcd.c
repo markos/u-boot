@@ -1,8 +1,7 @@
 #include <common.h>
 #include <asm/io.h>
 #include <asm/arch/imx-regs.h>
-#include <asm/arch/mx5x_pins.h>
-#include <asm/arch/iomux.h>
+#include <asm/arch/iomux-mx51.h>
 #include <asm/gpio.h>
 #include <errno.h>
 #include <linux/list.h>
@@ -66,52 +65,30 @@ struct fb_videomode mx51_efika_mode = {
 	0,
 };
 
+static iomux_v3_cfg_t const efikasb_lcd_pads[] = {
+	MX51_PAD_DISPB2_SER_DIN__GPIO3_5,
+	MX51_PAD_DISPB2_SER_CLK__GPIO3_7,
+	MX51_PAD_CSI1_D9__GPIO3_13,
+	MX51_PAD_CSI1_D8__GPIO3_12,
+	MX51_PAD_CSI2_D19__GPIO4_12,
+	MX51_PAD_DI1_D1_CS__GPIO3_4,
+	NEW_PAD_CTRL(MX51_PAD_DI2_DISP_CLK__DI2_DISP_CLK, PAD_CTL_DSE_LOW | PAD_CTL_PKE | PAD_CTL_SRE_FAST)
+};
+
+static iomux_v3_cfg_t const efikamx_hdmi_pads[] = {
+	MX51_PAD_DI1_D1_CS__GPIO3_4,
+	MX51_PAD_DISPB2_SER_CLK__GPIO3_7,
+	MX51_PAD_DISPB2_SER_DIN__GPIO3_5,
+};
+
 void setup_iomux_lcd(void)
 {
 	if (machine_is_efikasb()) {
-		/* DISP RST */
-		mxc_request_iomux(MX51_PIN_DISPB2_SER_DIN, IOMUX_CONFIG_GPIO);
-		mxc_iomux_set_pad(MX51_PIN_DISPB2_SER_DIN, PAD_CTL_SRE_FAST |
-					PAD_CTL_DRV_HIGH | PAD_CTL_PKE_ENABLE);
-
-		/* DISP2 EN# */
-		mxc_request_iomux(MX51_PIN_DISPB2_SER_CLK, IOMUX_CONFIG_GPIO);
-		mxc_iomux_set_pad(MX51_PIN_DISPB2_SER_CLK, PAD_CTL_SRE_FAST |
-					PAD_CTL_DRV_HIGH | PAD_CTL_PKE_ENABLE);
-		/* LCD_PWRON */
-		mxc_request_iomux(MX51_PIN_CSI1_D9, IOMUX_CONFIG_GPIO);
-		mxc_iomux_set_pad(MX51_PIN_CSI1_D9, PAD_CTL_SRE_FAST |
-					PAD_CTL_DRV_HIGH | PAD_CTL_PKE_ENABLE);
-		/* LCD_PWRON_R */
-		mxc_request_iomux(MX51_PIN_CSI1_D8, IOMUX_CONFIG_GPIO);
-		mxc_iomux_set_pad(MX51_PIN_CSI1_D8, PAD_CTL_SRE_FAST |
-					PAD_CTL_DRV_HIGH | PAD_CTL_PKE_ENABLE);
-		/* LCD_BL_PWRON# */
-		mxc_request_iomux(MX51_PIN_CSI2_D19, IOMUX_CONFIG_GPIO);
-		mxc_iomux_set_pad(MX51_PIN_CSI2_D19, PAD_CTL_SRE_FAST |
-					PAD_CTL_DRV_HIGH | PAD_CTL_PKE_ENABLE);
-		/* DISP1_EN# */
-		mxc_request_iomux(MX51_PIN_DI1_D1_CS, IOMUX_CONFIG_GPIO);
-		mxc_iomux_set_pad(MX51_PIN_DI1_D1_CS, PAD_CTL_SRE_FAST |
-					PAD_CTL_DRV_HIGH | PAD_CTL_PKE_ENABLE);
-
-		mxc_iomux_set_pad(MX51_PIN_DI2_DISP_CLK, PAD_CTL_SRE_FAST |
-					PAD_CTL_DRV_LOW | PAD_CTL_PKE_ENABLE);
+		imx_iomux_v3_setup_multiple_pads(efikasb_lcd_pads,
+					ARRAY_SIZE(efikasb_lcd_pads));
 	} else {
-		/* HDMI Enable */
-		mxc_request_iomux(MX51_PIN_DI1_D1_CS, IOMUX_CONFIG_GPIO);
-		mxc_iomux_set_pad(MX51_PIN_DI1_D1_CS, PAD_CTL_SRE_FAST |
-					PAD_CTL_DRV_HIGH | PAD_CTL_PKE_ENABLE);
-
-		/* VGA Enable */
-		mxc_request_iomux(MX51_PIN_DISPB2_SER_CLK, IOMUX_CONFIG_GPIO);
-		mxc_iomux_set_pad(MX51_PIN_DISPB2_SER_CLK, PAD_CTL_SRE_FAST |
-					PAD_CTL_DRV_HIGH | PAD_CTL_PKE_ENABLE);
-
-		/* HDMI Reset */
-		mxc_request_iomux(MX51_PIN_DISPB2_SER_DIN, IOMUX_CONFIG_GPIO);
-		mxc_iomux_set_pad(MX51_PIN_DISPB2_SER_DIN, PAD_CTL_SRE_FAST |
-					PAD_CTL_DRV_HIGH | PAD_CTL_PKE_ENABLE);
+		imx_iomux_v3_setup_multiple_pads(efikamx_hdmi_pads,
+					ARRAY_SIZE(efikamx_hdmi_pads));
 	}
 }
 
@@ -120,22 +97,27 @@ void setup_efikasb_lcd(void)
 	int ret = 10;
 	const int size = sizeof(lcd_init_code);
 
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_DISPB2_SER_DIN), 0);
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_DISPB2_SER_CLK), 0);
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_CSI1_D9), 0);
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_CSI1_D8), 0);
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_DI1_D1_CS), 1);
+	/* MX51_PAD_DISPB2_SER_DIN__GPIO3_5 */
+	gpio_direction_output(IMX_GPIO_NR(3, 5), 0);
+	/* MX51_PAD_DISPB2_SER_CLK__GPIO3_7 */
+	gpio_direction_output(IMX_GPIO_NR(3, 7), 0);
+	/* MX51_PAD_CSI1_D9__GPIO3_13 */
+	gpio_direction_output(IMX_GPIO_NR(3, 13), 0);
+	/* MX51_PAD_CSI1_D8__GPIO3_12 */
+	gpio_direction_output(IMX_GPIO_NR(3, 12), 0);
+	/* MX51_PAD_DI1_D1_CS__GPIO3_4 */
+	gpio_direction_output(IMX_GPIO_NR(3, 4), 1);
 	udelay(10000);
 
 	/* Reset the LCD */
-	gpio_set_value(IOMUX_TO_GPIO(MX51_PIN_CSI1_D9), 1);
+	gpio_set_value(IMX_GPIO_NR(3, 13), 1);
 	udelay(10000);
-	gpio_set_value(IOMUX_TO_GPIO(MX51_PIN_CSI1_D8), 1);
+	gpio_set_value(IMX_GPIO_NR(3, 12), 1);
 	udelay(5000);
-	gpio_set_value(IOMUX_TO_GPIO(MX51_PIN_DISPB2_SER_CLK), 1);
+	gpio_set_value(IMX_GPIO_NR(3, 7), 1);
 	udelay(5000);
 
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_CSI2_D19), 0);
+	gpio_direction_output(IMX_GPIO_NR(4, 12), 0);
 	udelay(10000);
 
 	/* Program the LCD init code */
@@ -191,13 +173,13 @@ int siihdmi_write(uint8_t reg, uint8_t val)
 
 void siihdmi_reset(void)
 {
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_DI1_D1_CS), 0);
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_DISPB2_SER_CLK), 1);
+	gpio_direction_output(IMX_GPIO_NR(3, 4), 0);
+	gpio_direction_output(IMX_GPIO_NR(3, 7), 1);
 
 	/* Reset SII9022, 1 mS for reset sequence, 10 mS to leave reset */
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_DISPB2_SER_DIN), 1);
+	gpio_direction_output(IMX_GPIO_NR(3, 5), 1);
 	udelay(1000);
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_DISPB2_SER_DIN), 0);
+	gpio_direction_output(IMX_GPIO_NR(3, 5), 0);
 	udelay(10000);
 }
 
@@ -361,8 +343,8 @@ void setup_efikamx_lcd(void)
 
 exit:
 	printf("SIIHDMI: Controller setup error, powering down\n");
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_DISPB2_SER_CLK), 0);
-	gpio_direction_output(IOMUX_TO_GPIO(MX51_PIN_DI1_D1_CS), 1);
+	gpio_direction_output(IMX_GPIO_NR(3, 7), 0);
+	gpio_direction_output(IMX_GPIO_NR(3, 4), 1);
 }
 
 void setup_efika_lcd(void)
