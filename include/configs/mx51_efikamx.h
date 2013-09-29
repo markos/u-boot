@@ -225,6 +225,8 @@
 #define CONFIG_CMD_BMP
 #define CONFIG_BMP_16BPP
 #define CONFIG_SYS_WHITE_ON_BLACK
+#define CONFIG_IPUV3_CLK		133000000
+#define CONFIG_VIDEO_IPUV3
 
 /*
  * Filesystems
