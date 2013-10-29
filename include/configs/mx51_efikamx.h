@@ -54,6 +54,7 @@
 #define CONFIG_ENV_SECT_SIZE		(1 * 64 * 1024)
 #define CONFIG_ENV_SIZE			(4 * 1024)
 
+
 /*
  * ATAG setup
  */
@@ -200,10 +201,16 @@
  */
 #define CONFIG_CMD_I2C          1
 #define CONFIG_HARD_I2C         1
-#define CONFIG_I2C_MXC          1
-#define CONFIG_SYS_I2C_MX53_PORT2       1
+#define CONFIG_SYS_I2C		1
+#define CONFIG_SYS_I2C_MXC	1
+//#define CONFIG_I2C_MULTI_BUS	1
+#define CONFIG_SYS_I2C_BASE             I2C2_BASE_ADDR
 #define CONFIG_SYS_I2C_SPEED            400000
 #define CONFIG_SYS_I2C_SLAVE            0xfe
+#define CONFIG_SYS_MXC_I2C1_SPEED	400000
+#define CONFIG_SYS_MXC_I2C1_SLAVE       0xfe
+#define CONFIG_SYS_MXC_I2C2_SPEED	400000
+#define CONFIG_SYS_MXC_I2C2_SLAVE       0xfe
 
 /*
  * Framebuffer and LCD
