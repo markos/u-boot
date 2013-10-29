@@ -185,7 +185,9 @@ static int wait_for_sr_state(struct mxc_i2c_regs *i2c_regs, unsigned state)
 	ulong elapsed;
 	ulong start_time = get_timer(0);
 	for (;;) {
+		printf("wait_for_sr_state: reading I2SR...");
 		sr = readb(&i2c_regs->i2sr);
+		printf("I2SR = %0x\n", sr);
 		if (sr & I2SR_IAL) {
 #ifdef I2C_QUIRK_REG
 			writeb(sr | I2SR_IAL, &i2c_regs->i2sr);
@@ -196,6 +198,8 @@ static int wait_for_sr_state(struct mxc_i2c_regs *i2c_regs, unsigned state)
 				__func__, sr, readb(&i2c_regs->i2cr), state);
 			return -ERESTART;
 		}
+		printf("sr & I2SR_IBB = %0x\n", sr & I2SR_IBB);
+		printf("state: %0x, sr: %0x, sr & (state >> 8): %0x, ((sr & (state >> 8)) == (unsigned char)state) = %d\n", state, sr, sr & (state >> 8), ((sr & (state >> 8)) == (unsigned char)state));
 		if ((sr & (state >> 8)) == (unsigned char)state)
 			return sr;
 		WATCHDOG_RESET();
@@ -253,23 +257,35 @@ static int i2c_init_transfer_(struct mxc_i2c_regs *i2c_regs,
 #else
 	if (!(readb(&i2c_regs->i2cr) & I2CR_IEN)) {
 #endif
+		printf("I2C Controller not enabled, enabling...");
 		writeb(I2CR_IEN, &i2c_regs->i2cr);
 		/* Wait for controller to be stable */
 		udelay(50);
+		printf("ok\n");
 	}
 	if (readb(&i2c_regs->iadr) == (chip << 1))
 		writeb((chip << 1) ^ 2, &i2c_regs->iadr);
+	printf("Clearing interrupt I2SR_IIF...");
 	writeb(I2SR_IIF_CLEAR, &i2c_regs->i2sr);
+	printf("ok\n");
 	ret = wait_for_sr_state(i2c_regs, ST_BUS_IDLE);
+	printf("wait_for_sr_state(ST_BUS_IDLE) = %0x\n", ret);
 	if (ret < 0)
 		return ret;
 
+	udelay(50);
 	/* Start I2C transaction */
 	temp = readb(&i2c_regs->i2cr);
+	printf("I2CR = %0x\n", temp);
 	temp |= I2CR_MSTA;
+	printf("I2CR = %0x\n", temp);
 	writeb(temp, &i2c_regs->i2cr);
+	temp = readb(&i2c_regs->i2cr);
+	printf("I2CR = %0x\n", temp);
 
+	udelay(50);
 	ret = wait_for_sr_state(i2c_regs, ST_BUS_BUSY);
+	printf("wait_for_sr_state(ST_BUS_BUSY) = %0x\n", ret);
 	if (ret < 0)
 		return ret;
 
@@ -387,9 +403,11 @@ int bus_i2c_write(void *base, uchar chip, uint addr, int alen,
 	int i;
 	struct mxc_i2c_regs *i2c_regs = (struct mxc_i2c_regs *)base;
 
+	printf("Calling i2c_init_transfer(i2c_regs: %x, chip: %x, addr: %x, alen: %d)...", i2c_regs, chip, addr, alen);
 	ret = i2c_init_transfer(i2c_regs, chip, addr, alen);
 	if (ret < 0)
 		return ret;
+	printf("ok\n");
 
 	for (i = 0; i < len; i++) {
 		ret = tx_byte(i2c_regs, buf[i]);

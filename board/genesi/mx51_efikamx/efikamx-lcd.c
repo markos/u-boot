@@ -48,7 +48,7 @@ uint8_t lcd_init_code[] = {
 	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 };
 
-struct fb_videomode mx51_efika_mode = {
+struct fb_videomode mx51_efikasb_mode = {
 	.name		= "1024x600",
 	.refresh	= 60,
 	.xres		= 1024,
@@ -63,6 +63,22 @@ struct fb_videomode mx51_efika_mode = {
 	.sync		= 0x100,	/* Active Low */
 	.vmode		= FB_VMODE_NONINTERLACED,
 	0,
+};
+
+static struct fb_videomode const mx51_efikamx_mode = {
+	.name		= "DVI panel",
+	.refresh	= 60,
+	.xres		= 1024,
+	.yres		= 768,
+	.pixclock	= 15385,
+	.left_margin	= 220,
+	.right_margin	= 40,
+	.upper_margin	= 21,
+	.lower_margin	= 7,
+	.hsync_len	= 60,
+	.vsync_len	= 10,
+	.sync		= 0,
+	.vmode		= FB_VMODE_NONINTERLACED
 };
 
 static iomux_v3_cfg_t const efikasb_lcd_pads[] = {
@@ -188,15 +204,20 @@ int siihdmi_detect_rev(void)
 	int ret = 0, try;
 	uint8_t val;
 
+	printf("Calling siihdmi_write()...");
 	ret = siihdmi_write(SIIHDMI_TPI_REG_RQB, 0x0);
 	if (ret)
 		return ret;
+	printf("ok\n");
 
 	try = SIIHDMI_RETRIES;
 	while (--try) {
+		printf("Calling siihdmi_read()...");
 		ret = siihdmi_read(SIIHDMI_TPI_REG_DEVICE_ID, &val);
 		if (ret)
 			goto exit;
+		printf("ok\n");
+
 
 		if (val == SIIHDMI_TPI_REG_DEVICE_ID_B0)
 			break;
@@ -212,11 +233,16 @@ int siihdmi_init(void)
 {
 	int ret = 0;
 
+	printf("Calling siihdmi_reset()...");
 	siihdmi_reset();
+	printf("ok\n");
 
+	printf("Calling siihdmi_detect_rev()...");
 	ret = siihdmi_detect_rev();
 	if (ret)
 		goto exit;
+	printf("ok\n");
+	
 
 	/* Power up the transceiver, state D0 */
 	ret = siihdmi_write(SIIHDMI_TPI_REG_PWR_STATE, 0x0);
@@ -327,16 +353,18 @@ void setup_efikamx_lcd(void)
 {
 	int ret;
 
+	printf("Calling siihdmi_init()...");
 	ret = siihdmi_init();
 	if (ret)
 		goto exit;
+	printf("ok\n");
 
 	if (siihdmi_sink_present() != 1) {
 		printf("SIIHDMI: No sink present, output not enabled\n");
 		return;
 	}
 
-	if (siihdmi_set_res(&mx51_efika_mode))
+	if (siihdmi_set_res(&mx51_efikamx_mode))
 		goto exit;
 
 	return;
@@ -360,9 +388,9 @@ void setup_efika_lcd_early(void)
 	int ret = 0;
 
 	if (machine_is_efikasb())
-		ret = ipuv3_fb_init(&mx51_efika_mode, 1, IPU_PIX_FMT_RGB565);
+		ret = ipuv3_fb_init(&mx51_efikasb_mode, 1, IPU_PIX_FMT_RGB565);
 	else
-		ret = ipuv3_fb_init(&mx51_efika_mode, 0, IPU_PIX_FMT_RGB24);
+		ret = ipuv3_fb_init(&mx51_efikamx_mode, 0, IPU_PIX_FMT_RGB24);
 
 	if (ret)
 		puts("LCD cannot be configured\n");

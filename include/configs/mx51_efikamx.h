@@ -53,6 +53,8 @@
 #define CONFIG_ENV_OFFSET		(6 * 64 * 1024)
 #define CONFIG_ENV_SECT_SIZE		(1 * 64 * 1024)
 #define CONFIG_ENV_SIZE			(4 * 1024)
+#define CONFIG_EXTRA_ENV_SETTINGS	\
+	"setenv stdin serial; setenv stdout serial; setenv stderr serial;"
 
 
 /*
@@ -221,12 +223,16 @@
 #define CONFIG_CFB_CONSOLE
 #define CONFIG_VGA_AS_SINGLE_DEVICE
 #define CONFIG_VIDEO_BMP_RLE8
+#define CONFIG_VIDEO_LOGO
 #define CONFIG_SPLASH_SCREEN
 #define CONFIG_CMD_BMP
 #define CONFIG_BMP_16BPP
 #define CONFIG_SYS_WHITE_ON_BLACK
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
 #define CONFIG_IPUV3_CLK		133000000
 #define CONFIG_VIDEO_IPUV3
+
+
 
 /*
  * Filesystems

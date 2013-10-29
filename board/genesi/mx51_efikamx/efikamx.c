@@ -468,6 +468,7 @@ static inline void setup_efika_lcd_early(void) { }
  */
 int board_early_init_f(void)
 {
+	printf("Setting up led iomux...");
 	if (machine_is_efikasb()) {
 		imx_iomux_v3_setup_multiple_pads(efikasb_led_pads,
 						ARRAY_SIZE(efikasb_led_pads));
@@ -483,16 +484,21 @@ int board_early_init_f(void)
 		gpio_direction_output(EFIKAMX_LED_GREEN, 0);
 		gpio_direction_output(EFIKAMX_LED_RED, 1);
 	}
+	printf("ok\n");
 
 	/*
 	 * Both these pad configurations for UART and SPI are kind of redundant
 	 * since they are the Power-On Defaults for the i.MX51. But, it seems we
 	 * should make absolutely sure that they are set up correctly.
 	 */
+	printf("Setting up uart iomux...");
 	imx_iomux_v3_setup_multiple_pads(efikamx_uart_pads,
 					ARRAY_SIZE(efikamx_uart_pads));
+	printf("ok\n");
+	printf("Setting up spi iomux...");
 	imx_iomux_v3_setup_multiple_pads(efikamx_spi_pads,
 					ARRAY_SIZE(efikamx_spi_pads));
+	printf("ok\n");
 
 	/* not technically required for U-Boot operation but do it anyway. */
 	gpio_direction_input(EFIKAMX_PMIC_IRQ);
@@ -500,7 +506,9 @@ int board_early_init_f(void)
 	gpio_direction_output(EFIKAMX_SPI_SS0, 0);
 	gpio_direction_output(EFIKAMX_SPI_SS1, 1);
 
+	printf("Setting up lcd iomux...");
 	setup_iomux_lcd();
+	printf("ok\n");
 
 	return 0;
 }
@@ -509,13 +517,16 @@ int board_init(void)
 {
 	gd->bd->bi_boot_params = PHYS_SDRAM_1 + 0x100;
 
+	printf("Setting up lcd early...");
 	setup_efika_lcd_early();
+	printf("ok\n");
 
 	return 0;
 }
 
 int board_late_init(void)
 {
+	printf("Setting up led to blue...");
 	if (machine_is_efikamx()) {
 		/*
 		 * Set up Blue LED for "In U-Boot" status.
@@ -525,21 +536,35 @@ int board_late_init(void)
 		gpio_set_value(EFIKAMX_LED_GREEN, 0);
 		gpio_set_value(EFIKAMX_LED_BLUE, 1);
 	}
+	printf("ok\n");
 
+	printf("power init...");
 	power_init();
+	printf("ok\n");
 
+	printf("Setting up pata iomux...");
 	imx_iomux_v3_setup_multiple_pads(efikamx_pata_pads,
 					ARRAY_SIZE(efikamx_pata_pads));
+	printf("ok\n");
+
+	printf("Setting up usb iomux...");
 	setup_iomux_usb();
+	printf("ok\n");
 
 	if (machine_is_efikasb())
 		setenv("preboot", "usb reset ; setenv stdin usbkbd\0");
 
-	efikamx_toggle_led(EFIKAMX_LED_BLUE);
+	// efikamx_toggle_led(EFIKAMX_LED_BLUE);
 
+	setenv("preboot", "setenv stdout serial; setenv stdin serial; setenv stderr serial\0");
+
+	printf("Setting up i2c iomux...");
 	setup_iomux_i2c();
+	printf("ok\n");
 
+	printf("Setting up lcd...");
 	setup_efika_lcd();
+	printf("ok\n");
 
 	return 0;
 }
